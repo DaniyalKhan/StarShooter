@@ -85,7 +85,7 @@ public class StarVoyager extends StarShip implements Disposable {
 
 	@Override
 	public int getMaxHealth() {
-		return 10;
+		return 30;
 	}
 
 	public void update(float delta) {
@@ -146,19 +146,6 @@ public class StarVoyager extends StarShip implements Disposable {
 	public void dispose() {
 		laserFire.dispose();
 	}
-	
-//	@Override
-//	public boolean checkCollision(Laser laser) {
-//		boolean hit = super.checkCollision(laser);
-//		if (hit) {
-//			System.out.println(health);
-//			if (health <= 0) {
-//				numLives--;
-//				health = getMaxHealth();
-//			}
-//		}
-//		return hit;
-// 	}
 
 	@Override
 	public boolean damage(int damage) {
@@ -167,8 +154,7 @@ public class StarVoyager extends StarShip implements Disposable {
 			numLives--;
 			health = getMaxHealth();
 		}
-		return dead;
-				
+		return dead;			
 	}
 	
 	

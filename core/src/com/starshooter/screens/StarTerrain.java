@@ -1,5 +1,6 @@
 package com.starshooter.screens;
 
+import java.text.DecimalFormat;
 import java.util.Iterator;
 
 import com.badlogic.gdx.Gdx;
@@ -23,7 +24,7 @@ public class StarTerrain implements Screen, LaserListener, UIListener {
 	final float width, height;
 	
 	//UI STUFF
-	Sprite xIcon;
+	private Sprite xIcon;
 	
 	private final StarField starField;
 	private final StarVoyager ship;
@@ -115,6 +116,7 @@ public class StarTerrain implements Screen, LaserListener, UIListener {
 	}
 
 	public void renderUI(SpriteBatch batch) {
+		DecimalFormat oneDigit = new DecimalFormat("#,##0.0");//format to 1 decimal place
 		//lives
 		int lives = ship.numLives;
 		Sprite lifeIcon = ship.lifeIcon;
@@ -125,13 +127,13 @@ public class StarTerrain implements Screen, LaserListener, UIListener {
 		FontUtils.draw(batch, "" + lives, 135, height - 33);
 		//cannon power
 		FontUtils.draw(batch, "AMMO:", width - 270, height - 33);
-		FontUtils.drawShadedFont(batch, ship.cannonPower/100f, ship.cannonPower + "%", width - 145, height - 33);
+		FontUtils.drawShadedFont(batch, ship.cannonPower/100f, oneDigit.format(ship.cannonPower) + "%", width - 145, height - 33);
 		//score
 		FontUtils.draw(batch, "Score: " + score, width - 270, height - 83);
 		//health 
 		float percentHealth = (ship.getHealth() * 100f) / ship.getMaxHealth();
 		FontUtils.draw(batch, "HEALTH: ", 200, height - 33);
-		FontUtils.drawShadedFont(batch, percentHealth, percentHealth + "%", 360, height- 33);
+		FontUtils.drawShadedFont(batch, percentHealth/100f, oneDigit.format(percentHealth) + "%", 360, height- 33);
 	}
 	
 	@Override
