@@ -3,6 +3,7 @@ package com.starfish.controllers;
 import com.badlogic.gdx.controllers.Controller;
 import com.badlogic.gdx.controllers.ControllerAdapter;
 import com.badlogic.gdx.controllers.Controllers;
+import com.badlogic.gdx.math.MathUtils;
 
 public class PlayStation3 extends ControllerAdapter {
 
@@ -26,17 +27,18 @@ public class PlayStation3 extends ControllerAdapter {
 	public PlayStation3(PS3ButtonCallback callback) {
 		this.callback = callback;
 		this.controller = Controllers.getControllers().first();
-		System.err.print("WARNING!!! NO CONTROLLER PS3 CONTROLLER DETECTED!");
+		Controllers.addListener(this);
+		if (controller == null) System.err.print("WARNING!!! NO CONTROLLER PS3 CONTROLLER DETECTED!");
 	}
 
 	public float pollLeftAxisX() {
 		if (controller == null) return 0;
-		return -(controller.getAxis(LEFT_AXIS_X) * 100) / 100f;
+		return controller.getAxis(LEFT_AXIS_X);
 	}
 	
 	public float pollLeftAxisY() {
 		if (controller == null) return 0;
-		return -(controller.getAxis(LEFT_AXIS_Y) * 100) / 100f;
+		return -controller.getAxis(LEFT_AXIS_Y);
 	}
 	
 	public boolean pollL2() {
