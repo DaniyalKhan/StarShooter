@@ -1,4 +1,4 @@
-package com.starshooter;
+package com.starshooter.screens;
 
 import java.util.Iterator;
 import java.util.Random;
@@ -10,6 +10,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pool;
+import com.starshooter.StarShooter;
 import com.starshooter.util.TextureCache;
 
 public class StarField {

@@ -1,4 +1,4 @@
-package com.starfish.controllers;
+package com.starshooter.controllers;
 
 import com.badlogic.gdx.controllers.Controller;
 import com.badlogic.gdx.controllers.ControllerAdapter;
@@ -44,6 +44,11 @@ public class PlayStation3 extends ControllerAdapter {
 	public boolean pollL2() {
 		if (controller == null) return false;
 		return controller.getButton(L2);
+	}
+	
+	public boolean pollR2() {
+		if (controller == null) return false;
+		return controller.getButton(R2);
 	}
 
 	@Override

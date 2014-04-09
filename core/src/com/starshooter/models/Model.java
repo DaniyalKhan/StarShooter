@@ -1,4 +1,4 @@
-package com.starship.models;
+package com.starshooter.models;
 
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
