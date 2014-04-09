@@ -7,9 +7,9 @@ import com.badlogic.gdx.utils.Pool;
 
 public abstract class StarShip extends Sprite {
 
-	protected static final String BLUE = "blue";
-	protected static final String RED = "red";
-	protected static final String GREEN = "green";
+	public static final String BLUE = "blue";
+	public static final String RED = "red";
+	public static final String GREEN = "green";
 	
 	protected static final String GUN = "gun";
 	protected static final int NUMBER_GUNS = 10;
@@ -29,7 +29,7 @@ public abstract class StarShip extends Sprite {
 		void onFire(Laser laser);
 	}
 	
-	private final int health;
+	protected int health;
 	
 	private final LaserListener listener;
 	
@@ -39,9 +39,14 @@ public abstract class StarShip extends Sprite {
 		this.listener = listener;
 	}
 	
-	public void fire(float laserSpeed, Vector2 position, Vector2 direction) {
+	public boolean damage(int damage) {
+		health -= damage;
+		return health <= 0;
+	}
+	
+	public void fire(float laserSpeed, Vector2 position, Vector2 direction, int laserDamage) {
 		Laser laser = laserPool.obtain();
-		laser.setProperties(position.x, position.y, Laser.BLUE, Laser.TYPE_SHORT, direction.x, direction.y, laserSpeed, Laser.Type.Friendly);
+		laser.setProperties(position.x, position.y, Laser.BLUE, Laser.TYPE_SHORT, direction.x, direction.y, laserSpeed, Laser.Type.Friendly, laserDamage);
 		if (listener != null) listener.onFire(laser);
 	}
 	

@@ -26,9 +26,10 @@ public class PlayStation3 extends ControllerAdapter {
 	
 	public PlayStation3(PS3ButtonCallback callback) {
 		this.callback = callback;
-		this.controller = Controllers.getControllers().first();
+		if (Controllers.getControllers().size == 0)
+			System.err.print("WARNING!!! NO CONTROLLER PS3 CONTROLLER DETECTED!");
+		else this.controller = Controllers.getControllers().first();
 		Controllers.addListener(this);
-		if (controller == null) System.err.print("WARNING!!! NO CONTROLLER PS3 CONTROLLER DETECTED!");
 	}
 
 	public float pollLeftAxisX() {

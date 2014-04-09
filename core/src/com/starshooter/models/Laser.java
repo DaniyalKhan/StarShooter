@@ -24,19 +24,23 @@ public class Laser extends Sprite implements Poolable {
 	public static String GREEN = "Green";
 	
 	private Vector2 direction = new Vector2();
-	
 	private float speed; 
-	
 	private Type type; 
+	private int damage;
 
-	public void setProperties(float x, float y, String colour, String type, float xDirection, float yDirection, float speed, Type friendly) {
+	public void setProperties(float x, float y, String colour, String type, float xDirection, float yDirection, float speed, Type friendly, int damage) {
 		setRegion(TextureCache.obtain().get(LASER + colour + type));
 		this.direction.set(xDirection, yDirection);
 		this.speed = speed;
 		this.type = friendly;
+		this.damage = damage;
 		setOrigin(getWidth()/2f, getHeight()/2f);
 		setBounds(x - getWidth()/2f, y - getHeight()/2f, getRegionWidth(), getRegionHeight());
-		setRotation(AlgebraUtils.angle(direction, NORMAL));
+		setRotation(AlgebraUtils.angle(direction, NORMAL)  + rotationFromTerminal);
+	}
+	
+	public int getDamageDealt() {
+		return damage; 
 	}
 	
 	public boolean isFriendly() {
@@ -44,8 +48,8 @@ public class Laser extends Sprite implements Poolable {
 	}
 
 	public void update(float delta) {
-		float dx = speed * delta * MathUtils.cosDeg(getRotation() + rotationFromTerminal);
-		float dy = speed * delta * MathUtils.sinDeg(getRotation() + rotationFromTerminal);
+		float dx = speed * delta * MathUtils.cosDeg(getRotation());
+		float dy = speed * delta * MathUtils.sinDeg(getRotation());
 		translate(dx, dy);
 	}
 
@@ -56,7 +60,7 @@ public class Laser extends Sprite implements Poolable {
 	
 	@Override
 	public void draw(Batch batch) {
-		SpriteUtils.customDraw(batch, this, getRotation() + rotationFromTerminal);
+		SpriteUtils.customDraw(batch, this, getRotation());
 	}
 	
 	

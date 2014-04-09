@@ -47,6 +47,7 @@ public class StarVoyager extends StarShip implements Disposable {
 	private float lastRecoveryTime = cannonRecoveryTime;
 	private float lastFireTime = fireRate;
 	private boolean firedThisFrame = false;
+	private int damage = 1;
 	
 	//UI STUFF
 	public final Sprite lifeIcon;
@@ -98,22 +99,22 @@ public class StarVoyager extends StarShip implements Disposable {
 		firedThisFrame = false;
 		if (controller.pollR2() && lastFireTime >= fireRate) {
 			lastFireTime = 0;
-			if (frontCannon) fire(laserSpeed, cannonPosition(Cannons.Front), tmp2.set(0, 1));
-			if (leftCannon) fire(laserSpeed, cannonPosition(Cannons.Left), tmp2.set(-1, 0));
-			if (rightCannon) fire(laserSpeed, cannonPosition(Cannons.Right), tmp2.set(1, 0));
-			if (rearCannon) fire(laserSpeed, cannonPosition(Cannons.Rear), tmp2.set(0, -1));
+			if (frontCannon) fire(laserSpeed, cannonPosition(Cannons.Front), tmp2.set(0, 1), damage);
+			if (leftCannon) fire(laserSpeed, cannonPosition(Cannons.Left), tmp2.set(-1, 0), damage);
+			if (rightCannon) fire(laserSpeed, cannonPosition(Cannons.Right), tmp2.set(1, 0), damage);
+			if (rearCannon) fire(laserSpeed, cannonPosition(Cannons.Rear), tmp2.set(0, -1), damage);
 		}
 	}
 	
 	@Override
-	public void fire(float laserSpeed, Vector2 position, Vector2 direction) {
+	public void fire(float laserSpeed, Vector2 position, Vector2 direction, int damage) {
 		if (cannonPower < cannonCost) return;
 		cannonPower -= cannonCost;
 		if (!firedThisFrame) {
 			laserFire.play();
 			firedThisFrame = true;
 		}
-		super.fire(laserSpeed, position, direction);
+		super.fire(laserSpeed, position, direction, damage);
 	}
 
 	@Override

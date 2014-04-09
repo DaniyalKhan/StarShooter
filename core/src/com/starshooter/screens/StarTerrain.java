@@ -1,10 +1,15 @@
 package com.starshooter.screens;
 
+import java.util.Iterator;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.utils.Array;
+import com.starshooter.models.EnemyWave;
 import com.starshooter.models.Laser;
 import com.starshooter.models.StarShip.LaserListener;
 import com.starshooter.models.StarVoyager;
@@ -25,6 +30,8 @@ public class StarTerrain implements Screen, LaserListener {
 	private final SpriteBatch batch;
 	private final Array<Laser> friendlies = new Array<Laser>(false, 64);
 	private final Array<Laser> foes = new Array<Laser>(false, 32);
+	
+	private final Array<EnemyWave> enemies = new Array<EnemyWave>();
 	
 	public StarTerrain(SpriteBatch batch) {
 		this.width = Gdx.graphics.getWidth();
@@ -49,13 +56,37 @@ public class StarTerrain implements Screen, LaserListener {
 		ship.update(delta);
 		for (Laser laser: friendlies) laser.update(delta);
 		for (Laser laser: foes) laser.update(delta);
+		for (EnemyWave enemy: enemies) 
+			enemy.update(delta, ship.getX(), ship.getY());
+		EnemyWave wave = EnemyWave.update(delta, this);
+		if (wave != null) enemies.add(wave);
 		
 		starField.render(batch);
 		for (Laser laser: friendlies) laser.draw(batch);
 		for (Laser laser: foes) laser.draw(batch);
+		for (EnemyWave enemy: enemies) enemy.draw(batch);
 		ship.draw(batch);
 		renderUI(batch);
 		batch.end();
+		
+		Iterator<Laser> it = friendlies.iterator();
+		while (it.hasNext()) {
+			Laser friendly = it.next();
+			boolean hit = false;
+			for (EnemyWave enemyWave: enemies) {
+				if (enemyWave.checkCollision(friendly)) {
+					hit = true;
+					break;
+				}
+			}
+			if (hit) it.remove();
+		}
+		
+//		ShapeRenderer s = new ShapeRenderer();
+//		s.begin(ShapeType.Line);
+//		for (EnemyWave enemy: enemies) enemy.debug(s);
+//		s.end();
+		
 	}
 
 	public void renderUI(SpriteBatch batch) {

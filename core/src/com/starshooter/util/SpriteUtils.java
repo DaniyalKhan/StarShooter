@@ -3,6 +3,7 @@ package com.starshooter.util;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 
 public class SpriteUtils {
@@ -11,6 +12,15 @@ public class SpriteUtils {
 	
 	public static Vector2 getMid(Sprite s) {
 		return tmp.set(s.getX() + s.getRegionWidth()/2f, s.getY() + s.getRegionHeight()/2f);
+	}
+	
+	public static Vector2 getMid(Rectangle r) {
+		return tmp.set(r.x + r.width/2f, r.y + r.height/2f);
+	}
+
+	public static void center(Sprite s, float x, float y) {
+		s.setPosition(x, y);
+		s.translate(-s.getRegionWidth()/2f, -s.getRegionHeight()/2f);
 	}
 	
 	public static void customDraw(Batch batch, Sprite s, float rotation) {
