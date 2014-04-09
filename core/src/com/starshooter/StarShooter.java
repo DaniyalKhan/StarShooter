@@ -14,9 +14,10 @@ import com.starshooter.util.AtlasParser;
 public class StarShooter extends Game {
 	
 	public static final String DIR_GRAPHICS = "graphics/";
+	public static final String DIR_AUDIO = "audio/";
 	public static final String DIR_BACKGROUNDS = DIR_GRAPHICS + "backgrounds/";
 	
-	public static BitmapFont font;
+//	public static BitmapFont font;
 	Sprite damage;
 	
 	SpriteBatch batch;
@@ -24,7 +25,6 @@ public class StarShooter extends Game {
 	@Override
 	public void create () {
 		batch = new SpriteBatch();
-		font = new BitmapFont(Gdx.files.internal("fonts/kenvector.fnt"));
 		try {
 			AtlasParser.parse(Gdx.files.internal("graphics/sheet.xml"));
 		} catch (IOException e) {
@@ -38,10 +38,5 @@ public class StarShooter extends Game {
 		Gdx.gl.glClearColor(0, 0, 0, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		super.render();
-//		batch.draw(damage, 0, 0);
-//		batch.draw(img, 0, 0);
-//		font.setScale(1f, 1f);
-//		font.setColor(0f, 0f, 0f, 1f);
-//		font.draw(batch, "STARFISH SHOOTER", 100, 100);
 	}
 }
