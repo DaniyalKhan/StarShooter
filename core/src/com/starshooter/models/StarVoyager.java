@@ -37,6 +37,8 @@ public class StarVoyager extends StarShip implements Disposable {
 	private static enum Cannons {Front, Left, Right, Rear};
 	private static final float cannonCost = 0.5f;
 	
+	private static final float SIZE = 40;
+	
 	private final PlayStation3 controller;
 	
 	private boolean frontCannon = true;
@@ -54,8 +56,8 @@ public class StarVoyager extends StarShip implements Disposable {
 	public int numLives = 3;
 	public float cannonPower = 100;
 	
-	public StarVoyager(LaserListener listener) {
-		super(TextureCache.obtain().get(PLAYER_SHIP + SHIP_1 + ORANGE), listener);
+	public StarVoyager(LaserListener listener, UIListener uiListener) {
+		super(TextureCache.obtain().get(PLAYER_SHIP + SHIP_1 + ORANGE), listener, uiListener);
 		controller = new PlayStation3(new PS3ButtonCallback() {
 			@Override
 			public void onTriangle() {frontCannon = !frontCannon;}
@@ -71,8 +73,9 @@ public class StarVoyager extends StarShip implements Disposable {
 		setX(Gdx.graphics.getWidth()/2f - getWidth()/2f);
 		setY(Gdx.graphics.getHeight()/2f - getHeight()/2f);
 		lifeIcon = new Sprite(TextureCache.obtain().get(PLAYER + LIFE + SHIP_1 + ORANGE));
+		hitBox.radius = SIZE;
 	}
-	
+
 	private Vector2 cannonPosition(Cannons cannon) {
 		if (cannon == Cannons.Front) return cannonTemp.set(getX() + getWidth()/2f,  getY() + getHeight());
 		else if (cannon == Cannons.Left) return cannonTemp.set(getX(),  getY() + getHeight()/3f);
@@ -81,11 +84,12 @@ public class StarVoyager extends StarShip implements Disposable {
 	}
 
 	@Override
-	protected int getMaxHealth() {
+	public int getMaxHealth() {
 		return 10;
 	}
 
 	public void update(float delta) {
+		super.update(delta);
 		float cx = controller.pollLeftAxisX();
 		float cy = controller.pollLeftAxisY();
 		translate(600 * cx * delta, 400 * cy * delta);
@@ -99,22 +103,25 @@ public class StarVoyager extends StarShip implements Disposable {
 		firedThisFrame = false;
 		if (controller.pollR2() && lastFireTime >= fireRate) {
 			lastFireTime = 0;
-			if (frontCannon) fire(laserSpeed, cannonPosition(Cannons.Front), tmp2.set(0, 1), damage);
-			if (leftCannon) fire(laserSpeed, cannonPosition(Cannons.Left), tmp2.set(-1, 0), damage);
-			if (rightCannon) fire(laserSpeed, cannonPosition(Cannons.Right), tmp2.set(1, 0), damage);
-			if (rearCannon) fire(laserSpeed, cannonPosition(Cannons.Rear), tmp2.set(0, -1), damage);
+			if (frontCannon) fire(laserSpeed, cannonPosition(Cannons.Front), tmp2.set(-1, 0), damage, Laser.Type.Friendly);
+			if (leftCannon) fire(laserSpeed, cannonPosition(Cannons.Left), tmp2.set(0, -1), damage, Laser.Type.Friendly);
+			if (rightCannon) fire(laserSpeed, cannonPosition(Cannons.Right), tmp2.set(0, 1), damage, Laser.Type.Friendly);
+			if (rearCannon) fire(laserSpeed, cannonPosition(Cannons.Rear), tmp2.set(1, 0), damage, Laser.Type.Friendly);
 		}
+		Vector2 mid = SpriteUtils.getMid(this);
+		hitBox.x = mid.x;
+		hitBox.y = mid.y;
 	}
 	
 	@Override
-	public void fire(float laserSpeed, Vector2 position, Vector2 direction, int damage) {
+	public void fire(float laserSpeed, Vector2 position, Vector2 direction, int damage, Laser.Type type) {
 		if (cannonPower < cannonCost) return;
 		cannonPower -= cannonCost;
 		if (!firedThisFrame) {
 			laserFire.play();
 			firedThisFrame = true;
 		}
-		super.fire(laserSpeed, position, direction, damage);
+		super.fire(laserSpeed, position, direction, damage, type);
 	}
 
 	@Override
@@ -138,6 +145,30 @@ public class StarVoyager extends StarShip implements Disposable {
 	@Override
 	public void dispose() {
 		laserFire.dispose();
+	}
+	
+//	@Override
+//	public boolean checkCollision(Laser laser) {
+//		boolean hit = super.checkCollision(laser);
+//		if (hit) {
+//			System.out.println(health);
+//			if (health <= 0) {
+//				numLives--;
+//				health = getMaxHealth();
+//			}
+//		}
+//		return hit;
+// 	}
+
+	@Override
+	public boolean damage(int damage) {
+		boolean dead = super.damage(damage);
+		if (dead) {
+			numLives--;
+			health = getMaxHealth();
+		}
+		return dead;
+				
 	}
 	
 	

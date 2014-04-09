@@ -36,7 +36,7 @@ public class Laser extends Sprite implements Poolable {
 		this.damage = damage;
 		setOrigin(getWidth()/2f, getHeight()/2f);
 		setBounds(x - getWidth()/2f, y - getHeight()/2f, getRegionWidth(), getRegionHeight());
-		setRotation(AlgebraUtils.angle(direction, NORMAL)  + rotationFromTerminal);
+		setRotation(AlgebraUtils.angle(direction, NORMAL));
 	}
 	
 	public int getDamageDealt() {

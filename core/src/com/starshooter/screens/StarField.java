@@ -73,6 +73,7 @@ public class StarField {
 		Sprite body = celestialPool.obtain();
 		body.setX(rand.nextFloat() * fieldWidth);
 		body.setY(rand.nextFloat() * background.getRegionHeight() + fieldHeight);
+		body.setColor(1f, 1f, 1f, 0.5f);
 		celestialBodies.add(body);
 	}
 

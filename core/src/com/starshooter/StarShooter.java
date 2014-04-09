@@ -17,9 +17,6 @@ public class StarShooter extends Game {
 	public static final String DIR_AUDIO = "audio/";
 	public static final String DIR_BACKGROUNDS = DIR_GRAPHICS + "backgrounds/";
 	
-//	public static BitmapFont font;
-	Sprite damage;
-	
 	SpriteBatch batch;
 	
 	@Override

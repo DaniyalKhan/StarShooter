@@ -6,17 +6,17 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.utils.Array;
 import com.starshooter.models.EnemyWave;
 import com.starshooter.models.Laser;
 import com.starshooter.models.StarShip.LaserListener;
+import com.starshooter.models.StarShip.UIListener;
 import com.starshooter.models.StarVoyager;
+import com.starshooter.util.AlgebraUtils;
 import com.starshooter.util.FontUtils;
 import com.starshooter.util.TextureCache;
 
-public class StarTerrain implements Screen, LaserListener {
+public class StarTerrain implements Screen, LaserListener, UIListener {
 
 	private int score = 0;
 	
@@ -38,7 +38,7 @@ public class StarTerrain implements Screen, LaserListener {
 		this.height = Gdx.graphics.getHeight();
 		this.batch = batch;
 		this.starField = new StarField(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-		this.ship = new StarVoyager(this);
+		this.ship = new StarVoyager(this, this);
 		this.xIcon = new Sprite(TextureCache.obtain().get("numeralX"));
 	}
 
@@ -58,29 +58,54 @@ public class StarTerrain implements Screen, LaserListener {
 		for (Laser laser: foes) laser.update(delta);
 		for (EnemyWave enemy: enemies) 
 			enemy.update(delta, ship.getX(), ship.getY());
-		EnemyWave wave = EnemyWave.update(delta, this);
+		EnemyWave wave = EnemyWave.update(delta, this, this);
 		if (wave != null) enemies.add(wave);
+	
+		{
+			Iterator<EnemyWave> it = enemies.iterator();
+			while (it.hasNext()) {
+				EnemyWave enemyWave = it.next();
+				if (enemyWave.noMoreShips()) {
+					it.remove();
+				}
+			}
+		}
 		
 		starField.render(batch);
 		for (Laser laser: friendlies) laser.draw(batch);
 		for (Laser laser: foes) laser.draw(batch);
+		
 		for (EnemyWave enemy: enemies) enemy.draw(batch);
 		ship.draw(batch);
-		renderUI(batch);
-		batch.end();
 		
-		Iterator<Laser> it = friendlies.iterator();
-		while (it.hasNext()) {
-			Laser friendly = it.next();
-			boolean hit = false;
-			for (EnemyWave enemyWave: enemies) {
-				if (enemyWave.checkCollision(friendly)) {
-					hit = true;
-					break;
+		{
+			Iterator<Laser> it = foes.iterator();
+			while (it.hasNext()) {
+				Laser foe = it.next();
+				if (ship.checkCollision(foe)) {
+					it.remove();
+					ship.damage(foe.getDamageDealt());
 				}
 			}
-			if (hit) it.remove();
 		}
+		
+		{
+			Iterator<Laser> it = friendlies.iterator();
+			while (it.hasNext()) {
+				Laser friendly = it.next();
+				boolean hit = false;
+				for (EnemyWave enemyWave: enemies) {
+					if (enemyWave.checkCollision(friendly)) {
+						hit = true;
+						break;
+					}
+				}
+				if (hit) it.remove();
+			}
+		}
+		
+		renderUI(batch);
+		batch.end();
 		
 //		ShapeRenderer s = new ShapeRenderer();
 //		s.begin(ShapeType.Line);
@@ -103,6 +128,15 @@ public class StarTerrain implements Screen, LaserListener {
 		FontUtils.drawShadedFont(batch, ship.cannonPower/100f, ship.cannonPower + "%", width - 145, height - 33);
 		//score
 		FontUtils.draw(batch, "Score: " + score, width - 270, height - 83);
+		//health 
+		float percentHealth = (ship.getHealth() * 100f) / ship.getMaxHealth();
+		FontUtils.draw(batch, "HEALTH: ", 200, height - 33);
+		FontUtils.drawShadedFont(batch, percentHealth, percentHealth + "%", 360, height- 33);
+	}
+	
+	@Override
+	public void onScoreChange(int addition) {
+		score += addition;
 	}
 	
 	@Override

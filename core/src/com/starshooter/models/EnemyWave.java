@@ -11,6 +11,7 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.starshooter.models.StarShip.LaserListener;
+import com.starshooter.models.StarShip.UIListener;
 import com.starshooter.util.AlgebraUtils;
 import com.starshooter.util.SpriteUtils;
 
@@ -23,13 +24,13 @@ public class EnemyWave {
 	
 	private static final Random rand = new Random();
 	
-	private static int currentSpawnNumber = 2;
+	private static int currentSpawnNumber = 3;
 	
-	private static float spawnThreshold = 1;
+	private static float spawnThreshold = 2.5f;
 	private static float LastSpawnTime = 0;
 	private static float totalTimeMin = 0;
 	
-	public static EnemyWave update(float delta, LaserListener listener) {
+	public static EnemyWave update(float delta, LaserListener listener, UIListener uiListener) {
 		totalTimeMin += delta/60f;
 		currentSpawnNumber = Math.max(MathUtils.round(totalTimeMin) * 2, 2);
 		LastSpawnTime += delta;
@@ -40,7 +41,7 @@ public class EnemyWave {
 			if (numPoints < 2) numPoints = 2;
 			else if (numPoints > 4) numPoints = 4;
 			numPoints = 4;
-			return new EnemyWave(numShips, listener, generatePoints(numPoints));
+			return new EnemyWave(numShips, listener, uiListener, generatePoints(numPoints));
 		}
 		return null;
 	}
@@ -95,12 +96,15 @@ public class EnemyWave {
 	private final float onScreenTime = 5f;
 	private float timeElapsed;
 	
-	public EnemyWave(int numShips, LaserListener listener, Vector2 ... points) {
+	private UIListener uiListener;
+	
+	public EnemyWave(int numShips, LaserListener listener, UIListener uiListener, Vector2 ... points) {
 		this.ships = new EnemyShip[numShips];
 		this.path = new Bezier<Vector2>(points);
 		for (int i = 0; i < numShips; i++) {
-			ships[i] = new EnemyShip(EnemyShip.BLACK, EnemyShip.EnemyType.TYPE_4, listener);
+			ships[i] = new EnemyShip(EnemyShip.BLACK, EnemyShip.EnemyType.TYPE_4, listener, uiListener);
 		}
+		this.uiListener = uiListener;
 		update(0, 0, 0);
  	}
 	
@@ -115,8 +119,10 @@ public class EnemyWave {
 			boolean hit = AlgebraUtils.colliding(tmpr, laser.getRotation(), enemy.getHitBox());
 			if (hit) {
 				boolean dead = enemy.damage(laser.getDamageDealt());
-				AlgebraUtils.colliding(tmpr, laser.getRotation(), enemy.getHitBox());
-				if (dead) ships[i] = null;
+				if (dead) {
+					if (uiListener != null) uiListener.onScoreChange(ships[i].getPoints());
+					ships[i] = null;
+				}
 				return true;
 			}
 		}
@@ -125,16 +131,20 @@ public class EnemyWave {
 	
 	public boolean noMoreShips() {
 		for (EnemyShip enemy: ships) {
-			if (enemy != null) return false;
+			if (enemy != null) {
+				boolean onScreen = SpriteUtils.onScreen(enemy);
+				if (onScreen) return false;
+			}
 		}
-		return true;
+		if (timeElapsed >= onScreenTime) return true;
+		return false;
 	}
 	
 	public void update(float delta, float xLookAt, float yLookAt) {
 		timeElapsed += delta;
 		for (int i = ships.length - 1; i >=0; i--) {
 			if (ships[i] == null) continue;
-			float t = timeElapsed/onScreenTime - i * 0.1f;
+			float t = timeElapsed/onScreenTime - i * 0.2f;
 			if (t < 0) t = 0;
 			Vector2 p = path.valueAt(tmp, t);
 			SpriteUtils.center(ships[i], p.x, p.y);
@@ -142,6 +152,7 @@ public class EnemyWave {
 			ships[i].getHitBox().y = p.y;
 			tmp.set(xLookAt, yLookAt).sub(tmp2.set(ships[i].getX(), ships[i].getY()));
 			ships[i].setRotation(AlgebraUtils.angle(tmp, NORMAL));
+			ships[i].update(delta);
 		}
 	}
 	
@@ -153,7 +164,9 @@ public class EnemyWave {
 	
 	public void draw(SpriteBatch batch) {
 		for (EnemyShip ship: ships) {
-			if (ship != null) ship.draw(batch);
+			if (ship != null) {
+				ship.draw(batch);
+			}
 		} 
 	}
 
