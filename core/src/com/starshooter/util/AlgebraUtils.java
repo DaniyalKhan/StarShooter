@@ -37,11 +37,15 @@ public class AlgebraUtils {
 	}
 	
 	public static Vector2 rotateAround(float v1x, float v1y, float v2x, float v2y, float theta) {
+		return rotateAround(v1x, v1y, v2x, v2y, theta, 0, 0);
+	}
+	
+	public static Vector2 rotateAround(float v1x, float v1y, float v2x, float v2y, float theta, float mx, float my) {
 		float cos = MathUtils.cosDeg(theta);
 		float sin = MathUtils.sinDeg(theta);
 		float dx = v1x - v2x;
 		float dy = v1y - v2y;
-		return tmp.set(cos * dx - sin * dy + v2x, sin * dx + cos * dy + v2y);
+		return tmp.set(cos * dx - sin * dy + v2x + mx, sin * dx + cos * dy + v2y + my);
 	}
 	
 }

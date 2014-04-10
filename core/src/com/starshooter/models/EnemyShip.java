@@ -27,7 +27,7 @@ public class EnemyShip extends StarShip {
 	private static Vector2 tmp = new Vector2();
 	
 	private final float shootProbability;
-	private float fireRate = 0.5f;
+	private float fireRate = 1.5f;
 	private float lastFireTime = 0;
 	
 	private boolean dead;

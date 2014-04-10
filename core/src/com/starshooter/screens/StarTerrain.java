@@ -5,17 +5,21 @@ import java.util.Iterator;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.starshooter.models.EnemyWave;
 import com.starshooter.models.Laser;
 import com.starshooter.models.StarShip.LaserListener;
 import com.starshooter.models.StarShip.UIListener;
 import com.starshooter.models.StarVoyager;
-import com.starshooter.util.AlgebraUtils;
 import com.starshooter.util.FontUtils;
+import com.starshooter.util.SpriteUtils;
 import com.starshooter.util.TextureCache;
 
 public class StarTerrain implements Screen, LaserListener, UIListener {
@@ -35,6 +39,14 @@ public class StarTerrain implements Screen, LaserListener, UIListener {
 	
 	private final Array<EnemyWave> enemies = new Array<EnemyWave>();
 	
+	private static final int BOSS_INTERVAL = 1; //minutes
+	
+	private int numBosses = 0; 
+	
+	private Boss boss; 
+	
+	float totalTimeMin;
+	
 	public StarTerrain(SpriteBatch batch) {
 		this.width = Gdx.graphics.getWidth();
 		this.height = Gdx.graphics.getHeight();
@@ -53,16 +65,27 @@ public class StarTerrain implements Screen, LaserListener, UIListener {
 	@Override
 	public void render(float delta) {
 		batch.begin();
-		
+		float bossSpawnTime = BOSS_INTERVAL * numBosses + 0.01666f;
+		if (totalTimeMin < bossSpawnTime && totalTimeMin + delta/60f >= bossSpawnTime) {
+			totalTimeMin += delta/60f;
+			boss = new Boss(new TextureRegion(new Texture(Gdx.files.internal("boss.png"))), this, this, 10 * (numBosses +1));
+		}
 		starField.advance(delta);
 		ship.update(delta);
 		for (Laser laser: friendlies) laser.update(delta);
 		for (Laser laser: foes) laser.update(delta);
 		for (EnemyWave enemy: enemies) 
 			enemy.update(delta, ship.getX(), ship.getY());
-		EnemyWave wave = EnemyWave.update(delta, this, this);
-		if (wave != null) enemies.add(wave);
-	
+		
+		if (boss == null) {
+			EnemyWave wave = EnemyWave.update(delta, this, this);
+			if (wave != null) enemies.add(wave);
+			totalTimeMin += delta/60f;
+		} else {
+			Vector2 mid = SpriteUtils.getMid(ship);
+			boss.update(delta, mid.x, mid.y);
+		}
+		
 		{
 			Iterator<EnemyWave> it = enemies.iterator();
 			while (it.hasNext()) {
@@ -79,6 +102,9 @@ public class StarTerrain implements Screen, LaserListener, UIListener {
 		
 		for (EnemyWave enemy: enemies) enemy.draw(batch);
 		ship.draw(batch);
+		if (boss != null) {
+			boss.draw(batch);
+		}
 		
 		{
 			Iterator<Laser> it = foes.iterator();
@@ -96,23 +122,32 @@ public class StarTerrain implements Screen, LaserListener, UIListener {
 			while (it.hasNext()) {
 				Laser friendly = it.next();
 				boolean hit = false;
-				for (EnemyWave enemyWave: enemies) {
-					if (enemyWave.checkCollision(friendly)) {
-						hit = true;
-						break;
+				if (boss != null && boss.checkCollision(friendly)) {
+					hit = true;
+				} else {
+					for (EnemyWave enemyWave: enemies) {
+						if (enemyWave.checkCollision(friendly)) {
+							hit = true;
+							break;
+						}
 					}
 				}
 				if (hit) it.remove();
+			}
+			
+			if (boss != null && boss.getHealth() < 0 && boss.getColor().a <= 0) {
+				boss = null;
 			}
 		}
 		
 		renderUI(batch);
 		batch.end();
 		
-//		ShapeRenderer s = new ShapeRenderer();
-//		s.begin(ShapeType.Line);
+		ShapeRenderer s = new ShapeRenderer();
+		s.begin(ShapeType.Line);
+		if (boss != null) boss.debug(s);
 //		for (EnemyWave enemy: enemies) enemy.debug(s);
-//		s.end();
+		s.end();
 		
 	}
 
@@ -151,6 +186,12 @@ public class StarTerrain implements Screen, LaserListener, UIListener {
 			if (i == ship.cannonModeIndex) FontUtils.drawBlack(batch, s, x, height - 83);
 			else FontUtils.draw(batch, s, x, height - 83);
 			i++;
+		}
+		
+		if (boss != null && boss.getHealth() > 0) {
+			float percentBossHealth = (boss.getHealth() * 100f) / boss.getMaxHealth();
+			FontUtils.draw(batch, "BOSS HP:", 50, 60);
+			FontUtils.drawShadedFont(batch, percentBossHealth, oneDigit.format(percentBossHealth) + "%", 220, 60);
 		}
 		
 	}
