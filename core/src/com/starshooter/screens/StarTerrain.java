@@ -5,14 +5,15 @@ import java.util.Iterator;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
+import com.starshooter.StarShooter;
 import com.starshooter.models.EnemyWave;
 import com.starshooter.models.Laser;
 import com.starshooter.models.StarShip.LaserListener;
@@ -39,13 +40,16 @@ public class StarTerrain implements Screen, LaserListener, UIListener {
 	
 	private final Array<EnemyWave> enemies = new Array<EnemyWave>();
 	
-	private static final int BOSS_INTERVAL = 1; //minutes
+	private static final float BOSS_INTERVAL = 3f; //minutes
 	
 	private int numBosses = 0; 
 	
 	private Boss boss; 
 	
 	float totalTimeMin;
+	
+	private static final Music IntroMusic = Gdx.audio.newMusic(Gdx.files.internal(StarShooter.DIR_AUDIO + "intro.ogg"));
+	private static final Music BossMusic = Gdx.audio.newMusic(Gdx.files.internal(StarShooter.DIR_AUDIO + "boss.ogg"));
 	
 	public StarTerrain(SpriteBatch batch) {
 		this.width = Gdx.graphics.getWidth();
@@ -65,10 +69,14 @@ public class StarTerrain implements Screen, LaserListener, UIListener {
 	@Override
 	public void render(float delta) {
 		batch.begin();
-		float bossSpawnTime = BOSS_INTERVAL * numBosses + 0.01666f;
-		if (totalTimeMin < bossSpawnTime && totalTimeMin + delta/60f >= bossSpawnTime) {
-			totalTimeMin += delta/60f;
-			boss = new Boss(new TextureRegion(new Texture(Gdx.files.internal("boss.png"))), this, this, 10 * (numBosses +1));
+		float bossSpawnTime = numBosses == 0 ? 0.1f: BOSS_INTERVAL;
+		if (totalTimeMin >= bossSpawnTime) {
+			totalTimeMin = 0;
+			numBosses++;
+			boss = new Boss(new TextureRegion(new Texture(Gdx.files.internal("boss.png"))), this, this, numBosses == 1 ? 100 : 500 * numBosses);
+			IntroMusic.stop();
+			BossMusic.setLooping(true);
+			BossMusic.play();
 		}
 		starField.advance(delta);
 		ship.update(delta);
@@ -77,13 +85,18 @@ public class StarTerrain implements Screen, LaserListener, UIListener {
 		for (EnemyWave enemy: enemies) 
 			enemy.update(delta, ship.getX(), ship.getY());
 		
+		if (boss != null && boss.requestSpawn) {
+			EnemyWave wave = EnemyWave.update(delta, this, this, true);
+			enemies.add(wave);
+			boss.requestSpawn = false;
+		}
+		
 		if (boss == null) {
-			EnemyWave wave = EnemyWave.update(delta, this, this);
+			EnemyWave wave = EnemyWave.update(delta, this, this, false);
 			if (wave != null) enemies.add(wave);
 			totalTimeMin += delta/60f;
 		} else {
-			Vector2 mid = SpriteUtils.getMid(ship);
-			boss.update(delta, mid.x, mid.y);
+			boss.update(delta, ship.getX(), ship.getY());
 		}
 		
 		{
@@ -137,17 +150,20 @@ public class StarTerrain implements Screen, LaserListener, UIListener {
 			
 			if (boss != null && boss.getHealth() < 0 && boss.getColor().a <= 0) {
 				boss = null;
+				BossMusic.stop();
+				IntroMusic.setLooping(true);
+				IntroMusic.play();
 			}
 		}
 		
 		renderUI(batch);
 		batch.end();
 		
-		ShapeRenderer s = new ShapeRenderer();
-		s.begin(ShapeType.Line);
-		if (boss != null) boss.debug(s);
+//		ShapeRenderer s = new ShapeRenderer();
+//		s.begin(ShapeType.Line);
+//		if (boss != null) boss.debug(s);
 //		for (EnemyWave enemy: enemies) enemy.debug(s);
-		s.end();
+//		s.end();
 		
 	}
 
@@ -208,7 +224,8 @@ public class StarTerrain implements Screen, LaserListener, UIListener {
 
 	@Override
 	public void show() {
-		
+		IntroMusic.setLooping(true);
+		IntroMusic.play();
 	}
 
 	@Override

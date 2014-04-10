@@ -3,6 +3,7 @@ package com.starshooter.models;
 import java.util.Random;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Bezier;
@@ -10,6 +11,7 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
+import com.starshooter.StarShooter;
 import com.starshooter.models.EnemyShip.EnemyType;
 import com.starshooter.models.StarShip.LaserListener;
 import com.starshooter.models.StarShip.UIListener;
@@ -31,20 +33,29 @@ public class EnemyWave {
 	private static float LastSpawnTime = 0;
 	private static float totalTimeMin = 0;
 	
-	public static EnemyWave update(float delta, LaserListener listener, UIListener uiListener) {
+	private static final Sound deadSound = Gdx.audio.newSound(Gdx.files.internal(StarShooter.DIR_AUDIO + "sfx_zap.ogg"));
+	
+	public static EnemyWave update(float delta, LaserListener listener, UIListener uiListener, boolean force) {
+		if (force) {
+			return gen(listener, uiListener);
+		}
 		totalTimeMin += delta/60f;
 		currentSpawnNumber = Math.max(MathUtils.round(totalTimeMin) * 2, 2);
 		LastSpawnTime += delta;
 		if (LastSpawnTime >= spawnThreshold) {
 			LastSpawnTime = 0;
-			int numShips = Math.min((int) Math.ceil(currentSpawnNumber * Math.abs(rand.nextGaussian())), 5);
-			int numPoints = (int) (Math.ceil(totalTimeMin/60f) * Math.abs(rand.nextGaussian()));
-			if (numPoints < 2) numPoints = 2;
-			else if (numPoints > 4) numPoints = 4;
-			numPoints = 4;
-			return new EnemyWave(numShips, listener, uiListener, generatePoints(numPoints));
+			return gen(listener, uiListener);
 		}
 		return null;
+	}
+	
+	private static EnemyWave gen(LaserListener listener, UIListener uiListener) {
+		int numShips = Math.min((int) Math.ceil(currentSpawnNumber * Math.abs(rand.nextGaussian())), 5);
+		int numPoints = (int) (Math.ceil(totalTimeMin/60f) * Math.abs(rand.nextGaussian()));
+		if (numPoints < 2) numPoints = 2;
+		else if (numPoints > 4) numPoints = 4;
+		numPoints = 4;
+		return new EnemyWave(numShips, listener, uiListener, generatePoints(numPoints));
 	}
 	
 	private static Vector2[] generatePoints(int num) {
@@ -129,6 +140,7 @@ public class EnemyWave {
 					deadShips.add(ships[i]);
 					ships[i].modulation = EnemyShip.FADE;
 					ships[i] = null;
+					deadSound.play();
 				}
 				return true;
 			}

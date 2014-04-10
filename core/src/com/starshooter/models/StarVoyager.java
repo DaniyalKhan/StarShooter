@@ -2,7 +2,6 @@ package com.starshooter.models;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Sound;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -34,7 +33,10 @@ public class StarVoyager extends StarShip implements Disposable {
 	private static final String ORANGE = "orange";
 	private static final String YELLOW = "yellow";
 	
-	private static final Sound laserFire = Gdx.audio.newSound(Gdx.files.internal(StarShooter.DIR_AUDIO + "sfx_laser1.ogg"));
+	private static final Sound laserFire1 = Gdx.audio.newSound(Gdx.files.internal(StarShooter.DIR_AUDIO + "sfx_laser1.ogg"));
+	private static final Sound laserFire2 = Gdx.audio.newSound(Gdx.files.internal(StarShooter.DIR_AUDIO + "sfx_laser2.ogg"));
+	private static final Sound shieldUpSound = Gdx.audio.newSound(Gdx.files.internal(StarShooter.DIR_AUDIO + "sfx_shieldUp.ogg"));
+	private static final Sound shieldDownSound = Gdx.audio.newSound(Gdx.files.internal(StarShooter.DIR_AUDIO + "sfx_shieldDown.ogg"));
 	
 	private static final float fireRate = 0.1f; // 1 bullet per <rate> seconds
 	private static final float laserSpeed = 1000f;
@@ -49,23 +51,26 @@ public class StarVoyager extends StarShip implements Disposable {
 		protected int laserDamage;
 		protected final StarVoyager voyager;
 		
-		public CannonMode(float cost, int laserDamage, StarVoyager voyager) {
+		protected final Sound firingMusic;
+		
+		public CannonMode(float cost, int laserDamage, StarVoyager voyager, Sound sound) {
 			this.cost = cost;
 			this.laserDamage = laserDamage;
 			this.voyager = voyager;
+			this.firingMusic = sound;
 		}
 		
 		public void fire(float laserSpeed, Vector2 position, Vector2 direction) {
 			cannonPower -= cost;
 			if (!firedThisFrame) {
-				laserFire.play();
+				firingMusic.play();
 				firedThisFrame = true;
 			}
 		}
 
 	}
 	
-	private CannonMode burst = new CannonMode(0.5f, 1, this) {
+	private CannonMode burst = new CannonMode(0.5f, 1, this, laserFire1) {
 		@Override
 		public void fire(float laserSpeed, Vector2 position, Vector2 direction) {
 			if (voyager.cannonPower < cost) return;
@@ -76,7 +81,7 @@ public class StarVoyager extends StarShip implements Disposable {
 		}
 	};
 	
-	private CannonMode stream = new CannonMode(0.3f, 2, this) {
+	private CannonMode stream = new CannonMode(0.3f, 2, this, laserFire2) {
 		@Override
 		public void fire(float laserSpeed, Vector2 position, Vector2 direction) {
 			if (voyager.cannonPower < cost) return;
@@ -184,13 +189,15 @@ public class StarVoyager extends StarShip implements Disposable {
 			if (rearCannon) modes[cannonModeIndex].fire(laserSpeed, cannonPosition(Cannons.Rear), tmp2.set(1, 0));
 		}
 		if (controller.pollL2() && shieldPower > 0) {
+			if (!shieldUp) shieldUpSound.play();
 			shieldUp = true;
-			shieldPower -= shieldChangeRate * delta;
+			shieldPower -= 20 * delta;
 			if (shieldPower < 0) {
 				shieldPower = 0;
 				shieldUp = false;
 			}
 		} else if (!controller.pollL2()) {
+			if (shieldUp) shieldDownSound.play();
 			shieldUp = false;
 			shieldPower += shieldChangeRate * delta;
 			if (shieldPower > 100) shieldPower = 100;
@@ -230,11 +237,6 @@ public class StarVoyager extends StarShip implements Disposable {
 	private void drawGun(Batch batch, TextureRegion gun, Vector2 position, float rotation) {
 		SpriteUtils.customDraw(batch, gun, rotation, position.x, position.y);
 	}
-	
-	@Override
-	public void dispose() {
-		laserFire.dispose();
-	}
 
 	@Override
 	public boolean damage(int damage) {
@@ -257,6 +259,11 @@ public class StarVoyager extends StarShip implements Disposable {
 		Vector2 mid = SpriteUtils.getMid(shield);
 		shieldHitBox.set(mid.x, mid.y, SHIELD_SIZE);
 		return AlgebraUtils.colliding(tmpr, laser.getRotation(), shieldHitBox);
+	}
+
+	@Override
+	public void dispose() {
+		
 	}
 	
 	

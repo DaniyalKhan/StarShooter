@@ -10,7 +10,7 @@ public class DesktopLauncher {
 		config.width = 1440;
 		config.height = 900;
 		config.useGL30 = true;
-//		config.fullscreen = true;
+		config.fullscreen = false;
 		new LwjglApplication(new StarShooter(), config);
 	}
 }

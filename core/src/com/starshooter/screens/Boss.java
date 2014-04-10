@@ -33,7 +33,7 @@ public class Boss extends StarShip {
 	int rotDir = 1;
 	
 	enum FightMode {Stand, Fight};
-	enum Attack {Wave, Shoot};
+	enum Attack {Wave, Shoot, Pulse};
 	
 	float lastWaveTime;
 	
@@ -66,6 +66,7 @@ public class Boss extends StarShip {
 	}
 
 	
+	public boolean requestSpawn = false;
 	
 	protected void update(float delta, float xPos, float yPos) {
 		super.update(delta);
@@ -114,26 +115,33 @@ public class Boss extends StarShip {
 			}
 		} 
 		if (currentMode == FightMode.Fight && lastChangeTime > 3f) {
+			if (health < getMaxHealth()/2f && RAND.nextFloat() < 1 - ( health * 1f)/ getMaxHealth()) {
+				requestSpawn = true;
+			}
 			float r = RAND.nextFloat();
-			if (r <= 0.33f && currentAttack != Attack.Wave) {
+			if (r <= 0.25f && currentAttack != Attack.Wave) {
 				currentAttack = Attack.Wave;
 				lastWaveTime = 0;
 				currentSpeed =  50f;
-			} else if (r <= 0.66f) {
+			} else if (r <= 0.50f) {
 				currentAttack = Attack.Shoot;
 				currentSpeed =  100f;
+			} else if (r < 0.75f) {
+				currentAttack = Attack.Pulse;
+				currentSpeed =  50f;
 			} else {
 				currentMode = FightMode.Stand;
 				currentSpeed =  standSpeed;
-			}
+				rot = 0;
+			} 
 			lastChangeTime = 0;
 		}
 		
 		if (currentMode == FightMode.Fight && currentAttack == Attack.Wave) {
-			if (lastWaveTime >= 0.03f) {
+			if (lastWaveTime >= 0.1f) {
 				for (int i = -1; i < 2; i++) {
 					float angle = (float) (getRotation() + MathUtils.cos(total) * 90 + i * 20);
-					fire(900, SpriteUtils.getMid(this), tmp.set(MathUtils.cosDeg(angle), MathUtils.sinDeg(angle)), 1, Laser.Type.Foe);
+					fire(100, SpriteUtils.getMid(this), tmp.set(MathUtils.cosDeg(angle), MathUtils.sinDeg(angle)), 1, Laser.Type.Foe);
 				}
 				lastWaveTime = 0;
 			}
@@ -151,8 +159,19 @@ public class Boss extends StarShip {
 			lastWaveTime += delta;
 		}
 		
+		if (currentMode == FightMode.Fight && currentAttack == Attack.Pulse) {
+			if (lastWaveTime >= 0.03f) {
+				float angle = (float) (getRotation() + rot);
+				fire(1500, SpriteUtils.getMid(this), tmp.set(MathUtils.cosDeg(angle), MathUtils.sinDeg(angle)), 1, Laser.Type.Foe);
+				rot += 15;
+				lastWaveTime = 0;
+			}
+			lastWaveTime += delta;
+		}
+		
 	}
 
+	float rot = 0;
 
 
 	@Override
