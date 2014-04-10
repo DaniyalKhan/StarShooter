@@ -35,7 +35,7 @@ public class EnemyShip extends StarShip {
 	public EnemyShip(String color, EnemyType type, LaserListener listener, UIListener uiListener) {
 		super(TextureCache.obtain().get(ENEMY + color + (type.ordinal() + 1)), listener, uiListener);
 		this.type = type;
-		this.health = (type.ordinal() + 1) * 2;
+		this.health = (type.ordinal() + 1) * 2 + 5;
 		this.shootProbability = (type.ordinal() + 1) * 0.1f + 0.2f;
 		this.fireRate -= type.ordinal()/(type.ordinal() + 1f) - Math.abs(RAND.nextGaussian());
 	}

@@ -24,7 +24,17 @@ public class FontUtils {
 		return f;
 	}
 	
+	public static float getWidth(String s) {
+		return FONT_UI.getBounds(s).width;
+	}
+	
 	public static void draw(SpriteBatch batch, String str, float x, float y) {
+		FONT_UI.setColor(1f, 1f, 1f, 1f);
+		FONT_UI.draw(batch, str, x, y);
+	}
+	
+	public static void drawBlack(SpriteBatch batch, String str, float x, float y) {
+		FONT_UI.setColor(0f, 0f, 0f, 1f);
 		FONT_UI.draw(batch, str, x, y);
 	}
 

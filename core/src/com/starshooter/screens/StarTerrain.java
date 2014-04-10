@@ -5,6 +5,7 @@ import java.util.Iterator;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.Array;
@@ -134,6 +135,19 @@ public class StarTerrain implements Screen, LaserListener, UIListener {
 		float percentHealth = (ship.getHealth() * 100f) / ship.getMaxHealth();
 		FontUtils.draw(batch, "HEALTH: ", 200, height - 33);
 		FontUtils.drawShadedFont(batch, percentHealth/100f, oneDigit.format(percentHealth) + "%", 360, height- 33);
+		//selected fireMode
+		Sprite selectedButton = ship.fireModeIcon;
+		selectedButton.setPosition(ship.cannonModeIndex * 222 + 50, height - 113);
+		selectedButton.draw(batch);
+		String[] availableModes = ship.modeNames;
+		int i = 0;
+		for (String s: availableModes) {
+			float fontWidth = FontUtils.getWidth(s);
+			float x = 50 + selectedButton.getRegionWidth()/2f - fontWidth/2f + i * selectedButton.getRegionWidth();
+			if (i == ship.cannonModeIndex) FontUtils.drawBlack(batch, s, x, height - 83);
+			else FontUtils.draw(batch, s, x, height - 83);
+			i++;
+		}
 	}
 	
 	@Override

@@ -30,6 +30,7 @@ public class StarVoyager extends StarShip implements Disposable {
 	private static final String DAMAGE = "damage";
 
 	private static final String ORANGE = "orange";
+	private static final String YELLOW = "yellow";
 	
 	private static final Sound laserFire = Gdx.audio.newSound(Gdx.files.internal(StarShooter.DIR_AUDIO + "sfx_laser1.ogg"));
 	
@@ -40,18 +41,51 @@ public class StarVoyager extends StarShip implements Disposable {
 	
 	private static enum Cannons {Front, Left, Right, Rear};
 	
-	private static final float cannonCostStream = 0.5f;
-	private static final float cannonCostBurst = 0.3f;
-	private static final float cannonCostBomb = 2f;
-	private float cannonCost;
+	public abstract class CannonMode {
+		
+		protected float cost;
+		protected int laserDamage;
+		protected final StarVoyager voyager;
+		
+		public CannonMode(float cost, int laserDamage, StarVoyager voyager) {
+			this.cost = cost;
+			this.laserDamage = laserDamage;
+			this.voyager = voyager;
+		}
+		
+		public void fire(float laserSpeed, Vector2 position, Vector2 direction) {
+			cannonPower -= cost;
+			if (!firedThisFrame) {
+				laserFire.play();
+				firedThisFrame = true;
+			}
+		}
+
+	}
 	
-	private static final int cannonDamageStream = 2;
-	private static final int cannonDamageBurst = 1;
-	private static final int cannonDamageBomb = 8;
-	private int cannonDamage = 1;
+	private CannonMode burst = new CannonMode(0.5f, 1, this) {
+		@Override
+		public void fire(float laserSpeed, Vector2 position, Vector2 direction) {
+			if (voyager.cannonPower < cost) return;
+			super.fire(laserSpeed, position, direction);
+			voyager.fire(laserSpeed, position, direction, laserDamage, Laser.Type.Friendly);
+			voyager.fire(laserSpeed, position, direction.rotate(-30), laserDamage, Laser.Type.Friendly);
+			voyager.fire(laserSpeed, position, direction.rotate(60), laserDamage, Laser.Type.Friendly);
+		}
+	};
 	
-	private static enum FireMode {Stream, Burst, Bomb};
-	private FireMode current = FireMode.Stream;
+	private CannonMode stream = new CannonMode(0.3f, 2, this) {
+		@Override
+		public void fire(float laserSpeed, Vector2 position, Vector2 direction) {
+			if (voyager.cannonPower < cost) return;
+			super.fire(laserSpeed, position, direction);
+			voyager.fire(laserSpeed, position, direction, laserDamage, Laser.Type.Friendly);
+		}
+	};
+	
+	public int cannonModeIndex = 0;
+	private CannonMode[] modes = new CannonMode[] {stream, burst};
+	public String[] modeNames = new String[] {"STREAM", "BURST"}; 
 	
 	private static final float SIZE = 40;
 	
@@ -68,6 +102,7 @@ public class StarVoyager extends StarShip implements Disposable {
 	
 	//UI STUFF
 	public final Sprite lifeIcon;
+	public final Sprite fireModeIcon;
 	public int numLives = 3;
 	public float cannonPower = 100;
 	
@@ -89,14 +124,18 @@ public class StarVoyager extends StarShip implements Disposable {
 			public void onCircle() {rightCannon = !rightCannon;}
 			@Override
 			public void onL1() {
-				int newMode = current.ordinal() == 0 ? FireMode.values().length - 1 : (current.ordinal() - 1) % FireMode.values().length;
-				current = FireMode.values()[newMode];}
+				cannonModeIndex = cannonModeIndex == 0 ? modes.length - 1 : cannonModeIndex - 1;
+			}
 			@Override
-			public void onR1() {current = FireMode.values()[(current.ordinal() + 1) % FireMode.values().length];}
+			public void onR1() {
+				cannonModeIndex = (cannonModeIndex + 1) % modes.length;
+			}
 		});
 		setX(Gdx.graphics.getWidth()/2f - getWidth()/2f);
 		setY(Gdx.graphics.getHeight()/2f - getHeight()/2f);
 		lifeIcon = new Sprite(TextureCache.obtain().get(PLAYER + LIFE + SHIP_1 + ORANGE));
+		if (colour.equals(ORANGE)) colour = YELLOW;
+		fireModeIcon = new Sprite(TextureCache.obtain().get("button" + colour.substring(0, 1).toUpperCase() + colour.substring(1)));
 		hitBox.radius = SIZE;
 	}
 
@@ -127,39 +166,14 @@ public class StarVoyager extends StarShip implements Disposable {
 		firedThisFrame = false;
 		if (controller.pollR2() && lastFireTime >= fireRate) {
 			lastFireTime = 0;
-			if (frontCannon) gaurdedFireMode(laserSpeed, cannonPosition(Cannons.Front), tmp2.set(-1, 0));
-			if (leftCannon) gaurdedFireMode(laserSpeed, cannonPosition(Cannons.Left), tmp2.set(0, -1));
-			if (rightCannon) gaurdedFireMode(laserSpeed, cannonPosition(Cannons.Right), tmp2.set(0, 1));
-			if (rearCannon) gaurdedFireMode(laserSpeed, cannonPosition(Cannons.Rear), tmp2.set(1, 0));
+			if (frontCannon) modes[cannonModeIndex].fire(laserSpeed, cannonPosition(Cannons.Front), tmp2.set(-1, 0));
+			if (leftCannon) modes[cannonModeIndex].fire(laserSpeed, cannonPosition(Cannons.Left), tmp2.set(0, -1));
+			if (rightCannon) modes[cannonModeIndex].fire(laserSpeed, cannonPosition(Cannons.Right), tmp2.set(0, 1));
+			if (rearCannon) modes[cannonModeIndex].fire(laserSpeed, cannonPosition(Cannons.Rear), tmp2.set(1, 0));
 		}
 		Vector2 mid = SpriteUtils.getMid(this);
 		hitBox.x = mid.x;
 		hitBox.y = mid.y;
-	}
-	
-	private void gaurdedFireMode(float laserSpeed, Vector2 position, Vector2 direction) {
-		if (current == FireMode.Stream) {
-			cannonCost = cannonCostStream;
-			cannonDamage = cannonDamageStream;
-			fire(laserSpeed, position, direction, cannonDamage, Laser.Type.Friendly);
-			fire(laserSpeed, position, direction.rotate(-30), cannonDamage, Laser.Type.Friendly);
-			fire(laserSpeed, position, direction.rotate(60), cannonDamage, Laser.Type.Friendly);
-		} else if (current == FireMode.Burst){
-			cannonCost = cannonCostBurst;
-			cannonDamage = cannonDamageBurst;
-			fire(laserSpeed, position, direction, cannonDamage, Laser.Type.Friendly);
-		}
-	}
-	
-	@Override
-	public void fire(float laserSpeed, Vector2 position, Vector2 direction, int damage, Laser.Type type) {
-		if (cannonPower < cannonCost) return;
-		cannonPower -= cannonCost;
-		if (!firedThisFrame) {
-			laserFire.play();
-			firedThisFrame = true;
-		}
-		super.fire(laserSpeed, position, direction, damage, type);
 	}
 
 	@Override
@@ -201,7 +215,6 @@ public class StarVoyager extends StarShip implements Disposable {
 		}
 		return dead;			
 	}
-	
 	
 	
 }
