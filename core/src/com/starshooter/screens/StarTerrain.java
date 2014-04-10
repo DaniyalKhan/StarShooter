@@ -135,6 +135,10 @@ public class StarTerrain implements Screen, LaserListener, UIListener {
 		float percentHealth = (ship.getHealth() * 100f) / ship.getMaxHealth();
 		FontUtils.draw(batch, "HEALTH: ", 200, height - 33);
 		FontUtils.drawShadedFont(batch, percentHealth/100f, oneDigit.format(percentHealth) + "%", 360, height- 33);
+		//shield
+		float percentShield = (ship.shieldPower);
+		FontUtils.draw(batch, "SHIELD: ", 500, height - 33);
+		FontUtils.drawShadedFont(batch, percentShield / 100f, oneDigit.format(percentShield) + "%", 640, height- 33);
 		//selected fireMode
 		Sprite selectedButton = ship.fireModeIcon;
 		selectedButton.setPosition(ship.cannonModeIndex * 222 + 50, height - 113);
@@ -148,6 +152,7 @@ public class StarTerrain implements Screen, LaserListener, UIListener {
 			else FontUtils.draw(batch, s, x, height - 83);
 			i++;
 		}
+		
 	}
 	
 	@Override

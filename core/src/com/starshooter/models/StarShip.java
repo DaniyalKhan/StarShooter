@@ -12,7 +12,7 @@ import com.starshooter.util.SpriteUtils;
 
 public abstract class StarShip extends Sprite {
 		
-	private static final Rectangle tmpr = new Rectangle();
+	protected static final Rectangle tmpr = new Rectangle();
 		
 	public static final String BLUE = "blue";
 	public static final String RED = "red";

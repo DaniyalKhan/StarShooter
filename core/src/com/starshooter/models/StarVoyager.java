@@ -6,11 +6,13 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Disposable;
 import com.starshooter.StarShooter;
 import com.starshooter.controllers.PlayStation3;
 import com.starshooter.controllers.PlayStation3.PS3ButtonCallback;
+import com.starshooter.util.AlgebraUtils;
 import com.starshooter.util.SpriteUtils;
 import com.starshooter.util.TextureCache;
 
@@ -69,8 +71,8 @@ public class StarVoyager extends StarShip implements Disposable {
 			if (voyager.cannonPower < cost) return;
 			super.fire(laserSpeed, position, direction);
 			voyager.fire(laserSpeed, position, direction, laserDamage, Laser.Type.Friendly);
-			voyager.fire(laserSpeed, position, direction.rotate(-30), laserDamage, Laser.Type.Friendly);
-			voyager.fire(laserSpeed, position, direction.rotate(60), laserDamage, Laser.Type.Friendly);
+			voyager.fire(laserSpeed, position, direction.rotate(-15), laserDamage, Laser.Type.Friendly);
+			voyager.fire(laserSpeed, position, direction.rotate(30), laserDamage, Laser.Type.Friendly);
 		}
 	};
 	
@@ -99,6 +101,15 @@ public class StarVoyager extends StarShip implements Disposable {
 	private float lastRecoveryTime = cannonRecoveryTime;
 	private float lastFireTime = fireRate;
 	private boolean firedThisFrame = false;
+	
+	private Sprite shield;
+	private boolean shieldUp = false;
+	public float shieldPower = 100;
+	public float shieldChangeRate = 10f; 
+	public int sheildStrength = 1;
+	private final Circle shieldHitBox = new Circle();
+	private static final float SHIELD_SIZE = 60;
+	
 	
 	//UI STUFF
 	public final Sprite lifeIcon;
@@ -137,6 +148,7 @@ public class StarVoyager extends StarShip implements Disposable {
 		if (colour.equals(ORANGE)) colour = YELLOW;
 		fireModeIcon = new Sprite(TextureCache.obtain().get("button" + colour.substring(0, 1).toUpperCase() + colour.substring(1)));
 		hitBox.radius = SIZE;
+		shield = new Sprite(TextureCache.obtain().get("shield" + sheildStrength));
 	}
 
 	private Vector2 cannonPosition(Cannons cannon) {
@@ -171,6 +183,18 @@ public class StarVoyager extends StarShip implements Disposable {
 			if (rightCannon) modes[cannonModeIndex].fire(laserSpeed, cannonPosition(Cannons.Right), tmp2.set(0, 1));
 			if (rearCannon) modes[cannonModeIndex].fire(laserSpeed, cannonPosition(Cannons.Rear), tmp2.set(1, 0));
 		}
+		if (controller.pollL2() && shieldPower > 0) {
+			shieldUp = true;
+			shieldPower -= shieldChangeRate * delta;
+			if (shieldPower < 0) {
+				shieldPower = 0;
+				shieldUp = false;
+			}
+		} else if (!controller.pollL2()) {
+			shieldUp = false;
+			shieldPower += shieldChangeRate * delta;
+			if (shieldPower > 100) shieldPower = 100;
+		}
 		Vector2 mid = SpriteUtils.getMid(this);
 		hitBox.x = mid.x;
 		hitBox.y = mid.y;
@@ -180,13 +204,19 @@ public class StarVoyager extends StarShip implements Disposable {
 	public void draw(Batch batch) {
 		drawCannons(batch);
 		super.draw(batch);
-		drawDamage(batch);
+		if (shieldUp) drawShield(batch);
 	}
 	
 	private void drawDamage(Batch batch) {
 //		int amountDamaged = 3 - (int) (Math.ceil(health * 1f / getMaxHealth())) * 2;
 //		TextureRegion tr = new TextureRegion(new Texture(Gdx.files.internal(StarShooter.DIR_GRAPHICS + DAMAGE_DIR + PLAYER_SHIP + shipType + DAMAGE + amountDamaged + ".png")));
 //		batch.draw(tr, getX(), getY());
+	}
+	
+	private void drawShield(Batch batch) {
+		Vector2 mid = SpriteUtils.getMid(this);
+		shield.setPosition(mid.x - shield.getRegionWidth()/2f, mid.y - shield.getRegionHeight()/2f + 20);
+		shield.draw(batch);
 	}
 	
 	private void drawCannons(Batch batch) {
@@ -208,12 +238,25 @@ public class StarVoyager extends StarShip implements Disposable {
 
 	@Override
 	public boolean damage(int damage) {
+		if (shieldUp) return false;
 		boolean dead = super.damage(damage);
 		if (dead) {
 			numLives--;
 			health = getMaxHealth();
 		}
 		return dead;			
+	}
+
+	@Override
+	public boolean checkCollision(Laser laser) {
+		if (!shieldUp) return super.checkCollision(laser);
+		tmpr.x = laser.getX();
+		tmpr.y = laser.getY();
+		tmpr.width = laser.getRegionWidth();
+		tmpr.height = laser.getRegionHeight();
+		Vector2 mid = SpriteUtils.getMid(shield);
+		shieldHitBox.set(mid.x, mid.y, SHIELD_SIZE);
+		return AlgebraUtils.colliding(tmpr, laser.getRotation(), shieldHitBox);
 	}
 	
 	
