@@ -10,6 +10,7 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
+import com.starshooter.models.EnemyShip.EnemyType;
 import com.starshooter.models.StarShip.LaserListener;
 import com.starshooter.models.StarShip.UIListener;
 import com.starshooter.util.AlgebraUtils;
@@ -36,7 +37,7 @@ public class EnemyWave {
 		LastSpawnTime += delta;
 		if (LastSpawnTime >= spawnThreshold) {
 			LastSpawnTime = 0;
-			int numShips = Math.min((int) Math.ceil(currentSpawnNumber * Math.abs(rand.nextGaussian())), 16);
+			int numShips = Math.min((int) Math.ceil(currentSpawnNumber * Math.abs(rand.nextGaussian())), 5);
 			int numPoints = (int) (Math.ceil(totalTimeMin/60f) * Math.abs(rand.nextGaussian()));
 			if (numPoints < 2) numPoints = 2;
 			else if (numPoints > 4) numPoints = 4;
@@ -75,12 +76,12 @@ public class EnemyWave {
 			point.y = rand.nextFloat() * height;
 		} else if (s == Side.Top) {
 			point.x = rand.nextFloat() * width;
-			point.y = out ? height + MAX_SHIP_SIZE : height;
+			point.y = out ? height + MAX_SHIP_SIZE : height - MAX_SHIP_SIZE;
 		} else if (s == Side.Right) {
-			point.x = out ? width + MAX_SHIP_SIZE : width;
-			point.y = rand.nextFloat() * height;
+			point.x = out ? width + MAX_SHIP_SIZE : width - MAX_SHIP_SIZE;
+			point.y = rand.nextFloat() * height - MAX_SHIP_SIZE;
 		} else if (s == Side.Bottom) {
-			point.x = rand.nextFloat() * width;
+			point.x = rand.nextFloat() * width - MAX_SHIP_SIZE;
 			point.y = out ? -MAX_SHIP_SIZE : 0;
 		}
 		return point;
@@ -90,6 +91,7 @@ public class EnemyWave {
 	private static final Rectangle tmpr = new Rectangle();
 	
 	private final EnemyShip[] ships;
+	private final Array<EnemyShip> deadShips = new Array<EnemyShip>();
 	private final Bezier<Vector2> path;
 	private static final Vector2 tmp = new Vector2();
 	private static final Vector2 tmp2 = new Vector2();
@@ -98,11 +100,14 @@ public class EnemyWave {
 	
 	private UIListener uiListener;
 	
+	private static String[] enemyColourMap = new String[] {EnemyShip.BLUE, EnemyShip.GREEN, EnemyShip.RED, EnemyShip.BLACK};
+	private static EnemyShip.EnemyType[] enemyTypeMap = new EnemyShip.EnemyType[] {EnemyShip.EnemyType.TYPE_2, EnemyShip.EnemyType.TYPE_3, EnemyShip.EnemyType.TYPE_4, EnemyShip.EnemyType.TYPE_5};
+	
 	public EnemyWave(int numShips, LaserListener listener, UIListener uiListener, Vector2 ... points) {
 		this.ships = new EnemyShip[numShips];
 		this.path = new Bezier<Vector2>(points);
 		for (int i = 0; i < numShips; i++) {
-			ships[i] = new EnemyShip(EnemyShip.BLACK, EnemyShip.EnemyType.TYPE_4, listener, uiListener);
+			ships[i] = new EnemyShip(enemyColourMap[rand.nextInt(enemyColourMap.length)], enemyTypeMap[(int) Math.min(Math.abs(rand.nextGaussian()) + totalTimeMin/2, 3)], listener, uiListener);
 		}
 		this.uiListener = uiListener;
 		update(0, 0, 0);
@@ -121,6 +126,8 @@ public class EnemyWave {
 				boolean dead = enemy.damage(laser.getDamageDealt());
 				if (dead) {
 					if (uiListener != null) uiListener.onScoreChange(ships[i].getPoints());
+					deadShips.add(ships[i]);
+					ships[i].modulation = EnemyShip.FADE;
 					ships[i] = null;
 				}
 				return true;
@@ -146,6 +153,7 @@ public class EnemyWave {
 			if (ships[i] == null) continue;
 			float t = timeElapsed/onScreenTime - i * 0.2f;
 			if (t < 0) t = 0;
+			if (t > 1) t = 1;
 			Vector2 p = path.valueAt(tmp, t);
 			SpriteUtils.center(ships[i], p.x, p.y);
 			ships[i].getHitBox().x = p.x;
@@ -153,6 +161,9 @@ public class EnemyWave {
 			tmp.set(xLookAt, yLookAt).sub(tmp2.set(ships[i].getX(), ships[i].getY()));
 			ships[i].setRotation(AlgebraUtils.angle(tmp, NORMAL));
 			ships[i].update(delta);
+		}
+		for (EnemyShip deadShip: deadShips) {
+			deadShip.update(delta);
 		}
 	}
 	
@@ -168,6 +179,9 @@ public class EnemyWave {
 				ship.draw(batch);
 			}
 		} 
+		for (EnemyShip deadShip: deadShips) {
+			deadShip.draw(batch);
+		}
 	}
 
 }

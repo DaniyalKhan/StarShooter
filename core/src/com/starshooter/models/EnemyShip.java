@@ -9,12 +9,15 @@ import com.starshooter.util.SpriteUtils;
 import com.starshooter.util.TextureCache;
 
 public class EnemyShip extends StarShip {
-
-	private static final String ENEMY = "enemy";
+	
+	public static final String BLUE = "Blue";
+	public static final String RED = "Red";
+	public static final String GREEN = "Green";
 	public static final String BLACK = "Black";
+	private static final String ENEMY = "enemy";
 	
 	//note to self: type 1 was weird hit box
-	public enum EnemyType {TYPE_1, TYPE_2, TYPE_3, TYPE_4, TYEPE_5};
+	public enum EnemyType {TYPE_1, TYPE_2, TYPE_3, TYPE_4, TYPE_5};
 	
 	private final EnemyType type;
 	
@@ -26,6 +29,8 @@ public class EnemyShip extends StarShip {
 	private final float shootProbability;
 	private float fireRate = 3f;
 	private float lastFireTime = 0;
+	
+	private boolean dead;
 	
 	public EnemyShip(String color, EnemyType type, LaserListener listener, UIListener uiListener) {
 		super(TextureCache.obtain().get(ENEMY + color + (type.ordinal() + 1)), listener, uiListener);
@@ -39,10 +44,17 @@ public class EnemyShip extends StarShip {
 	protected void update(float delta) {
 		super.update(delta);
 		lastFireTime += delta;
-		if (RAND.nextFloat() <= shootProbability && lastFireTime >= fireRate) {
+		if (RAND.nextFloat() <= shootProbability && lastFireTime >= fireRate && !dead) {
 			lastFireTime = 0;
-			fire(laserSpeed, SpriteUtils.getMid(this), tmp.set(MathUtils.cosDeg(getRotation()), MathUtils.sinDeg(getRotation())), 1, Laser.Type.Foe);
+			float rotationSkew = (float) (getRotation() + (RAND.nextFloat() -0.5) * 15);
+			fire(laserSpeed, SpriteUtils.getMid(this), tmp.set(MathUtils.cosDeg(rotationSkew), MathUtils.sinDeg(rotationSkew)), 1, Laser.Type.Foe);
 		}
+	}
+
+	@Override
+	public boolean damage(int damage) {
+		dead = super.damage(damage);
+		return dead; 
 	}
 
 	public int getPoints() {

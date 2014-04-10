@@ -60,6 +60,8 @@ public class PlayStation3 extends ControllerAdapter {
 			else if (buttonIndex == CROSS) callback.onCross();
 			else if (buttonIndex == TRIANGLE) callback.onTriangle();
 			else if (buttonIndex == START) callback.onStart();
+			else if (buttonIndex == L1) callback.onL1();
+			else if (buttonIndex == R1) callback.onR1();
 		}
 		return true;
 	}
@@ -70,6 +72,8 @@ public class PlayStation3 extends ControllerAdapter {
 		public void onCross();
 		public void onTriangle();
 		public void onStart();
+		public void onL1();
+		public void onR1();
 	}
 	
 }
